@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const ChatBotSchema = new mongoose.Schema({
   botname: String,
