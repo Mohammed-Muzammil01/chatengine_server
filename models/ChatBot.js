@@ -1,9 +1,10 @@
 const mongoose = require("mongoose");
 
 const ChatBotSchema = new mongoose.Schema({
+  botId: String,
   botname: String,
   botIntent: String,
-  owner: String,
+  botType: String
 });
 
 const ChatBot = mongoose.model('ChatBot', ChatBotSchema);

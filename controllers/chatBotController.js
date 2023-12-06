@@ -1,4 +1,5 @@
 const ChatBot = require('../models/ChatBot.js');
+const User = require('../models/User.js');
 
 const sm1 = (userInfo) => {
     const sm = `You are ${userInfo.botName}, a portfolio designed to answer professional queries about ${userInfo.name}. You need to strictly adhere to the data given about them. 
@@ -22,9 +23,9 @@ const sm1 = (userInfo) => {
   }
 
   const sm2 = (data) => {
-    const sm = `You are ${data.botName}, a restaurant chatbot for ${data.resName}. You will answer all menu queries. You will strictly stick to the menu given. 
-    If they have further queries they can call the restaurant at ${data.resNum}. ${data.resName}'s menu:
-    ${data.menu}`;
+    const sm = `You are ${data.botName || ""}, a restaurant chatbot for ${data.resName || ""}. You will answer all menu queries. You will strictly stick to the menu given. 
+    If they have further queries they can call the restaurant at ${data.resNum || ""}. ${data.resName || ""}'s menu:
+    ${data.menu || ""}`;
     return sm;
   }
 
@@ -36,12 +37,30 @@ const sm1 = (userInfo) => {
   }
 
 const createChatBot = async (req, res) => {
-    const { data } = req.body;
     try {
-        const response = await ChatBot.create({
-            botname: data.botName,
-            botIntent: data.botIntent,
-            owner: "newOwner"
+    const data = req.body;
+
+    let mssg;
+    if(data.type == "pBot"){
+        mssg = sm1(data);
+    } else if(data.type == "rBbot"){
+        mssg = sm2(data);
+    } else if(data.type == "csBot"){
+        mssg = sm3(data);
+    } else{
+        mssg = data.botIntent;
+    } 
+    const random = Math.round(Math.random() * 1000000).toString();
+        const user = await User.findById(req.user.userId);
+        user.chatbot.push({
+            random,
+          });
+        await user.save();
+        const response = ChatBot.create({
+            botId: random,
+            botname: data.botname, 
+            botIntent: mssg, 
+            botType: data.type, 
         });
         res.status(201).json({ message: 'Chatbot created successfully', chatbot: response });
     } catch (error) {

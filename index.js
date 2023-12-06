@@ -2,11 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const User = require('./models/User');
 const authenticateToken = require('./middleware/authMiddleware');
-// const passport = require("passport");
-// const passportSetup = require("./passport");
-// const authRoute = require('./routes/auth.js');
-// const cookieSession = require("cookie-session");
-
 const bcrypt = require('bcrypt'); 
 const jwt = require('jsonwebtoken');
 
@@ -23,17 +18,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// app.use(
-//     cookieSession({
-//         name:"session",
-//         keys: ["codeCrafters"],
-//         maxAge: 24 * 60 * 60 * 1000,
-//     })
-// );
-
-// app.use(passport.initialize());
-// app.use(passport.session());
-
 
 const mongoose = require('mongoose');
 const mongoURI = process.env.MONGO_URI;
@@ -49,47 +33,44 @@ db.once('open', () => {
 });
 
 app.use('/chatbot', require('./routes/chatBotRoute'));
-// app.use('/auth', authRoute);
 
-//user auth section
+//user auth section 
 // Register a new user
 app.post('/register', async (req, res) => {
     try {
-      const { username, password } = req.body;
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = new User({ username, password: hashedPassword });
+      const { username, email, pass } = req.body;
+      const hashedPassword = await bcrypt.hash(pass, 10);
+      const user = new User({ username, email, password: hashedPassword });
       await user.save();
-      res.json({ success: true, message: 'User registered successfully.' });
+      const token = jwt.sign({ userId: user._id }, 'your-secret-key', { expiresIn: '30d' });
+      res.status(201).json({ success: true, token });
     } catch (error) {
-      res.json({ success: false, error: error.message });
+      res.status(500).json({ success: false, error: error.message });
     }
-  });
+  }); 
   
   // User login
   app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+    const { username, pass } = req.body; 
     const user = await User.findOne({ username });
-  
+
     if (!user) {
-      return res.json({ success: false, message: 'Invalid username or password.' });
-    }
-  
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+      return res.status(401).json({ success: false, message: 'Invalid username or password.' });
+    }    
+    const isPasswordValid = await bcrypt.compare(pass, user.password);
   
     if (!isPasswordValid) {
-      return res.json({ success: false, message: 'Invalid username or password.' });
+      return res.status(401).json({ success: false, message: 'Invalid username or password.' });
     }
   
-    // Generate and send JWT token
-    const token = jwt.sign({ userId: user._id }, 'your-secret-key', { expiresIn: '1h' });
-    res.json({ success: true, token });
+    const token = jwt.sign({ userId: user._id }, 'your-secret-key', { expiresIn: '30d' });
+    res.status(200).json({ success: true, token });
   });
   
   // Protected route - example
   app.get('/profile', authenticateToken, (req, res) => {
     res.json({ success: true, message: 'Protected route accessed successfully.' });
   });
-  
    
 
 const port = process.env.PORT || 5000;
